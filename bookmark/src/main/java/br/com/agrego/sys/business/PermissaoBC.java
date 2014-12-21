@@ -44,10 +44,20 @@ public class PermissaoBC extends DelegateCrud<Permissao, Integer, PermissaoDAO> 
 		}
 	}
 
-	@Override
 	public void save(Permissao bean) throws MyException {
-		// TODO Auto-generated method stub
-		
+		if (bean !=null ){
+			if (bean.getMenu()==null) throw new MyException(3,"Menu não pode ser null.");
+			if (bean.getGrupo()==null) throw new MyException(3,"Grupo não pode ser null");
+		}else{
+			throw new MyException(3,"ERRO AO EXECUTAR AÇÃO NO BANCO DE DADOS.");
+		}
+		if (bean.getId() != null) {
+			update(bean);
+			throw MyException.update();
+		} else {
+			insert(bean);
+			throw MyException.insert();
+		}
 	}
 	
 	private List<Permissao> geraPermissoes(Grupo grupo){

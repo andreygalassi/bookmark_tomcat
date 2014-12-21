@@ -75,6 +75,9 @@ public class Credenciais implements Serializable,User {
 	
 	public void autorizacao(AbstractComponent view, String acao) throws MyException{
 		if (!getPermissao(view.getCaption()+"."+acao)){
+			for (String s : getPermissoes()) {
+				System.out.println(s);
+			}
 		 	throw new MyException(2,"Você não tem permissão para executar esta ação!");
 		}
 	}

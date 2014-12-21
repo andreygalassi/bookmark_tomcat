@@ -74,7 +74,7 @@ public class Permissao implements Serializable{
 	
 //	@ManyToOne(cascade = { CascadeType.ALL }, optional = false, targetEntity = EnumMenu.class, fetch = FetchType.EAGER)
 //	@JoinColumn(name = "MENU_ID")
-	@Column(name="MENU_ID") @Enumerated(EnumType.STRING)
+	@Column(name="MENU_ID",nullable=false) @Enumerated(EnumType.STRING)
 	private EnumMenu menu;
 
 	public Integer getId() {

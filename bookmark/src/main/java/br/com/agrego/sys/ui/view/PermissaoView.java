@@ -1,117 +1,83 @@
 package br.com.agrego.sys.ui.view;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.util.AnnotationLiteral;
-import javax.inject.Inject;
-
-import org.vaadin.data.collectioncontainer.CollectionContainer;
-
 import br.com.agrego.sys.domain.EnumMenu;
 import br.com.agrego.sys.domain.EnumTipoPermissao;
 import br.com.agrego.sys.domain.Grupo;
-import br.com.agrego.sys.domain.Permissao;
 import br.com.agrego.sys.util.FieldFactoryUtil;
-import br.gov.frameworkdemoiselle.vaadin.event.ProcessClear;
-import br.gov.frameworkdemoiselle.vaadin.event.ProcessDelete;
-import br.gov.frameworkdemoiselle.vaadin.event.ProcessSave;
+import br.com.agrego.sys.util.components.BotoesBasicos;
 import br.gov.frameworkdemoiselle.vaadin.stereotype.View;
 import br.gov.frameworkdemoiselle.vaadin.template.BaseVaadinView;
 
-import com.vaadin.data.Item;
-import com.vaadin.data.Property.ValueChangeEvent;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.OptionGroup;
+import com.vaadin.ui.Panel;
 import com.vaadin.ui.Table;
 
 @View
-public class PermissaoView extends BaseVaadinView implements Button.ClickListener {
+public class PermissaoView extends BaseVaadinView {
 
 	private static final long serialVersionUID = 1L;
+	
+	public ComboBox grupo;
+	public ComboBox menu;
+	public OptionGroup visualizar;
+	public OptionGroup alterar;
+	public OptionGroup criar;
+	public OptionGroup excluir;
+	public OptionGroup imprimir;
 
-	@Inject
-	private BeanManager beanManager;
+	public BotoesBasicos bb;
 	
-	private ComboBox grupo;
-	private ComboBox menu;
-	private OptionGroup visualizar;
-	private OptionGroup alterar;
-	private OptionGroup criar;
-	private OptionGroup excluir;
-	private OptionGroup imprimir;
+	public Table tabela;
 	
-	private Button btSalvar;
-	private Button btDeletar;
-	private Button btLimpar;
-	
-	private Table tabela;
-	
-	private Permissao bean;
+//	public Permissao bean;
 	
 	public void initializeComponents() {
 		setCaption(EnumMenu.PERMISSOES.getNome());
+
+		bb = BotoesBasicos.newInstance(this);	
 		
-		grupo	= FieldFactoryUtil.createComboBox("{permissao.grupo}", "descricao");
-		menu	= FieldFactoryUtil.createComboBox("{permissao.menu}", "nome");
+		grupo		= FieldFactoryUtil.createComboBox("{permissao.grupo}", "descricao");
+		menu		= FieldFactoryUtil.createComboBox("{permissao.menu}", "nome");
 		visualizar	= FieldFactoryUtil.createOptionGroup("{permissao.visualizar}","descricao");
-		alterar	= FieldFactoryUtil.createOptionGroup("{permissao.alterar}", "descricao");
-		criar	= FieldFactoryUtil.createOptionGroup("{permissao.criar}", "descricao");
-		excluir	= FieldFactoryUtil.createOptionGroup("{permissao.excluir}", "descricao");
+		alterar		= FieldFactoryUtil.createOptionGroup("{permissao.alterar}", "descricao");
+		criar		= FieldFactoryUtil.createOptionGroup("{permissao.criar}", "descricao");
+		excluir		= FieldFactoryUtil.createOptionGroup("{permissao.excluir}", "descricao");
 		imprimir	= FieldFactoryUtil.createOptionGroup("{permissao.imprimir}", "descricao");
+		tabela =  FieldFactoryUtil.createTabelaFormatada(this);
+		tabela.setSizeFull();
+		tabela.setSelectable(true);
 		
-		btSalvar = new Button("SALVAR");
-		btDeletar = new Button("DELETAR");
-		btLimpar = new Button("LIMPAR");
-		tabela = new Table();
+
 		
-		btSalvar.addListener(this);
-		btDeletar.addListener(this);
-		btLimpar.addListener(this);
-		class TitularComparator implements Comparator<EnumMenu> {
-		    public int compare(EnumMenu nome, EnumMenu outroNome) {
-		        return nome.getNome().compareTo(outroNome.getNome());
-		    }
-		}
-		TitularComparator comparator = new TitularComparator();
-		Collections.sort(EnumMenu.asList(), comparator);
-		menu.setContainerDataSource(CollectionContainer.fromBeans(EnumMenu.asList()));
-		
-		visualizar.setContainerDataSource(CollectionContainer.fromBeans(EnumTipoPermissao.asList()));
-		alterar.setContainerDataSource(CollectionContainer.fromBeans(EnumTipoPermissao.asList()));
-		criar.setContainerDataSource(CollectionContainer.fromBeans(EnumTipoPermissao.asList()));
-		excluir.setContainerDataSource(CollectionContainer.fromBeans(EnumTipoPermissao.asList()));
-		imprimir.setContainerDataSource(CollectionContainer.fromBeans(EnumTipoPermissao.asList()));
+		addComponent(montaDados());
+		addComponent(bb);
+		addComponent(montarTabela());
+	}
+	
+	private Panel montaDados(){
+		Panel p = new Panel("DADOS");
+		p.setWidth("100%");
 		
 		HorizontalLayout hl = new HorizontalLayout();
 		hl.setMargin(true);
 		hl.setSpacing(true);
-		hl.addComponent(grupo);
-		hl.addComponent(menu);
-		hl.addComponent(visualizar);
-		hl.addComponent(alterar);
-		hl.addComponent(criar);
-		hl.addComponent(excluir);
-		hl.addComponent(imprimir);
-		hl.addComponent(btSalvar);
-		hl.addComponent(btDeletar);
-		hl.addComponent(btLimpar);
-
-		montarTabela();
 		
-		addComponent(hl);
-		addComponent(tabela);
+		p.setContent(hl);
 		
-		limpar();
+		p.addComponent(grupo);
+		p.addComponent(menu);
+		p.addComponent(visualizar);
+		p.addComponent(alterar);
+		p.addComponent(criar);
+		p.addComponent(excluir);
+		p.addComponent(imprimir);
 		
+		return p;
 	}
 	
-	private void montarTabela(){
+	private Table montarTabela(){
 		tabela.setSelectable(true);
 		tabela.setImmediate(true);
 		tabela.setWidth("100%");
@@ -130,109 +96,7 @@ public class PermissaoView extends BaseVaadinView implements Button.ClickListene
 		tabela.setColumnHeaders(new String[]{"grupo", "menu", "visualizar", 
 				"alterar", "criar", "excluir","imprimir"});
 		
-		addListener();
-	}
-	
-	public Table getTabela(){
 		return tabela;
-	}
-	
-	public void addListener(){
-		tabela.addListener(new Table.ValueChangeListener() {
-			private static final long serialVersionUID = 1L;
-			@Override
-			public void valueChange(ValueChangeEvent event) {
-//				Object item = event.getProperty().getValue();
-				bean = (Permissao)event.getProperty().getValue();	
-				if (bean != null) {
-					//TODO comando para preencher fields e bean
-					grupo.select(bean.getGrupo());
-					menu.select(bean.getMenu());
-					visualizar.setValue(bean.getVisualizar());
-					alterar.select(bean.getAlterar());
-					criar.setValue(bean.getCriar());
-					excluir.setValue(bean.getExcluir());
-					imprimir.setValue(bean.getImprimir());
-				}else{
-					limpar();
-				}
-			}
-		});
-	}
-	
-	public void limpar(){
-		limpaComponentes();
-		bean = new Permissao();
-	}
-	
-	public void limpaComponentes(){
-		grupo.select(null);
-		menu.select(null);
-		visualizar.setValue(EnumTipoPermissao.INDETERMINADO);
-		alterar.select(EnumTipoPermissao.INDETERMINADO);
-		criar.setValue(EnumTipoPermissao.INDETERMINADO);
-		excluir.setValue(EnumTipoPermissao.INDETERMINADO);
-		imprimir.setValue(EnumTipoPermissao.INDETERMINADO);
-	}
-
-	public void setGrupo(List<Grupo> list) {
-		if (this.grupo != null) {
-			this.grupo.setContainerDataSource(CollectionContainer.fromBeans(list));
-		}
-	}
-	
-	public void setList(List<Permissao> list){
-//		tabela.setContainerDataSource(CollectionContainer.fromBeans(list));
-//		tabela.setVisibleColumns(new Object[]{"grupo", "menu", "visualizar", 
-//				"alterar", "criar", "excluir","imprimir"});
-//		tabela.setColumnHeaders(new String[]{"grupo", "menu", "visualizar", 
-//				"alterar", "criar", "excluir","imprimir"});
-		
-		tabela.removeAllItems();
-		for (Permissao p : list) {
-			Item item;
-			if (tabela.getItem(p) == null){
-				item = tabela.addItem(p);
-			}else{
-				item = tabela.getItem(p);
-			}
-			try {} catch (Exception e) {}
-			try {item.getItemProperty("grupo").setValue(p.getGrupo());} catch (Exception e) {}
-			try {item.getItemProperty("menu").setValue(p.getMenu().getNome());} catch (Exception e) {}
-			try {item.getItemProperty("visualizar").setValue(p.getVisualizar());} catch (Exception e) {}
-			try {item.getItemProperty("alterar").setValue(p.getAlterar());} catch (Exception e) {}
-			try {item.getItemProperty("criar").setValue(p.getCriar());} catch (Exception e) {}
-			try {item.getItemProperty("excluir").setValue(p.getExcluir());} catch (Exception e) {}
-			try {item.getItemProperty("imprimir").setValue(p.getImprimir());} catch (Exception e) {}
-		}
-	}
-
-	@SuppressWarnings("serial")
-	@Override
-	public void buttonClick(ClickEvent event) {
-		if (event.getButton()==btSalvar){
-			if (bean.getGrupo()==null){
-				bean.setGrupo((Grupo)grupo.getValue());
-			}
-			if (bean.getMenu()==null){
-				bean.setMenu((EnumMenu)menu.getValue());
-			}
-			
-			bean.setVisualizar((EnumTipoPermissao)visualizar.getValue());
-			bean.setAlterar((EnumTipoPermissao)alterar.getValue());
-			bean.setCriar((EnumTipoPermissao)criar.getValue());
-			bean.setExcluir((EnumTipoPermissao)excluir.getValue());
-			bean.setImprimir((EnumTipoPermissao)imprimir.getValue());
-			
-			beanManager.fireEvent(bean, new AnnotationLiteral<ProcessSave>() { });
-		}
-		if (event.getButton()==btDeletar){
-			beanManager.fireEvent(bean, new AnnotationLiteral<ProcessDelete>() { });
-		}
-		if (event.getButton()==btLimpar){
-			beanManager.fireEvent(this, new AnnotationLiteral<ProcessClear>() { });
-		}
-		
 	}
 
 }

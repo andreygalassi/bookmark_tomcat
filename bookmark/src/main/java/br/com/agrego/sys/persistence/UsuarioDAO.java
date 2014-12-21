@@ -22,7 +22,7 @@ public class UsuarioDAO extends JPACrud<Usuario, Long> {
 	}
 
 	public Usuario findByLogin(String login) {
-		Query query = createQuery("select t from usuario t where t.login = :login");
+		Query query = createQuery("select t from usuario t where t.login = :login and t.ativo=true");
 		query.setParameter("login", login);
 	
 		@SuppressWarnings("unchecked")

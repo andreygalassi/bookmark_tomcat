@@ -5,6 +5,8 @@ import java.util.Set;
 
 import javax.enterprise.context.SessionScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 
 import org.vaadin.data.collectioncontainer.CollectionContainer;
@@ -16,6 +18,7 @@ import br.com.agrego.sys.domain.Grupo;
 import br.com.agrego.sys.domain.Usuario;
 import br.com.agrego.sys.exeption.MyException;
 import br.com.agrego.sys.ui.annotation.ProcessAdd;
+import br.com.agrego.sys.ui.annotation.ProcessLoad;
 import br.com.agrego.sys.ui.view.UsuarioView;
 import br.com.agrego.sys.util.components.BotoesBasicos.EnumEstado;
 import br.gov.frameworkdemoiselle.stereotype.ViewController;
@@ -35,10 +38,13 @@ public class UsuarioPresenter extends AbstractPresenter<UsuarioView> {
 	@Inject	private UsuarioBC usuarioBC;
 	@Inject	private GrupoBC grupoBC;
 	@Inject private Credenciais credenciais;
+	@Inject private BeanManager beanManager;
 	
-	@SuppressWarnings({ "unchecked" })
-//	@RequiredRole(value=EnumMenu.USUARIO.getNome())
-//	@RequiredPermission(resource = "USUARIO", operation = "ALTERAR")
+	public void processLoad(@Observes @ProcessLoad Usuario usuario) {
+		getView().grupos.setContainerDataSource(CollectionContainer.fromBeans(grupoBC.findAllAtivos()));
+	}
+	
+	@SuppressWarnings({ "unchecked", "serial" })
 	public void processSave(@Observes @ProcessSave UsuarioView view) {
 		Usuario usuario = null;
 		try {
@@ -53,20 +59,21 @@ public class UsuarioPresenter extends AbstractPresenter<UsuarioView> {
 		} catch (MyException e) {
 			e.showMessage(getView());
 			setList(usuarioBC.findAll());
+			beanManager.fireEvent(usuario, new AnnotationLiteral<ProcessLoad>() {});
+			clear();
 //			Beans.getBeanManager().fireEvent(usuario, new AnnotationLiteral<ProcessSave>() {});
 		} catch (Exception e) {
+			getView().getWindow().showNotification("ERRO AO EXECUTAR AÇÃO", 3);
 			e.printStackTrace();
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "serial" })
 //	@Transactional
-//	@RequiredRole(value="CRIAR")
-//	@RequiredPermission(resource = "USUARIO", operation = "CRIAR")
 	public void processAdd(@Observes @ProcessAdd UsuarioView view) {
+		Usuario usuario = new Usuario();
 		try {
 			credenciais.autorizacao(view, Credenciais.ACAO_CRIAR);
-			Usuario usuario = new Usuario();
 			usuario.setLogin((String)view.login.getValue());
 			usuario.setSenha((String)view.senha.getValue());
 			usuario.setEmail((String)view.email.getValue());
@@ -76,23 +83,27 @@ public class UsuarioPresenter extends AbstractPresenter<UsuarioView> {
 		} catch (MyException e) {
 			e.showMessage(getView());
 			setList(usuarioBC.findAll());
+			beanManager.fireEvent(usuario, new AnnotationLiteral<ProcessLoad>() {});
+			clear();
 		} catch (Exception e) {
 			getView().getWindow().showNotification("ERRO AO EXECUTAR AÇÃO", 3);
 			e.printStackTrace();
 		}
 	}
-//	@RequiredPermission(resource = "USUARIO", operation = "EXCLUIR")
-//	@RequiredRole(value="EXCLUIR")
+
+	@SuppressWarnings("serial")
 	public void processDelete(@Observes @ProcessDelete UsuarioView view) {
+		Usuario usuario = null;
 		try {
 			credenciais.autorizacao(view, Credenciais.ACAO_EXCLUIR);
-			Usuario usuario = (Usuario) view.tabela.getValue();
+			usuario = (Usuario) view.tabela.getValue();
 			if (usuario==null) new MyException(2, "SELECIONE UM REGISTRO PARA EXCLUIR.");
 			usuario.setAtivo(false);
 			usuarioBC.save(usuario);
 		} catch (MyException e) {
 			e.showMessage(getView());
 			setList(usuarioBC.findAll());
+			beanManager.fireEvent(usuario, new AnnotationLiteral<ProcessLoad>() {});
 			clear();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -100,7 +111,6 @@ public class UsuarioPresenter extends AbstractPresenter<UsuarioView> {
 	}
 
 	public void processItemSelection(@Observes @ProcessItemSelection UsuarioView view) {
-//		getView().grupos.setValue(usuario.getGrupos());
 		Usuario usuario = (Usuario) view.tabela.getValue();
 		if (usuario!=null){
 			view.login.setValue(usuario.getLogin());
@@ -114,8 +124,6 @@ public class UsuarioPresenter extends AbstractPresenter<UsuarioView> {
 	}
 
 	public void beforeNavigateToView(@Observes @BeforeNavigateToView UsuarioView view) {
-//		view.setPerfis(perfilBC.findAll());
-//		view.getCrudForm().getField("pessoa").setContainerDataSource(CollectionContainer.fromBeans(list));
 		view.grupos.setContainerDataSource(CollectionContainer.fromBeans(grupoBC.findAll()));
 		setList(usuarioBC.findAll());
 

@@ -34,7 +34,6 @@ public class GrupoBC extends DelegateCrud<Grupo, Long, GrupoDAO> implements MyBC
 		}	
 	}
 	
-	@Override
 	public void save(Grupo bean) throws MyException {
 		if (bean.getId() != null) {
 			update(bean);

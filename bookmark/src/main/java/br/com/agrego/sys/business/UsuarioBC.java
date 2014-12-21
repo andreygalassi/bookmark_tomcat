@@ -50,10 +50,6 @@ public class UsuarioBC extends DelegateCrud<Usuario, Long, UsuarioDAO> implement
 			entity2.setLogin("usuario");
 			entity2.setSenha(CriptografiaUtil.criptografaString("usuario"));
 			insert(entity2);
-			
-//			List<String> lista  = new ArrayList<String>() ;
-//			lista.add("admin");
-//			lista.add("usuario");	
 		}	
 	}
 
@@ -86,6 +82,10 @@ public class UsuarioBC extends DelegateCrud<Usuario, Long, UsuarioDAO> implement
 	public Usuario findByLoginAndPass(Usuario usuario) {
 		UsuarioDAO dao = (UsuarioDAO) getDelegate();
 		return dao.findByLoginAndPass(usuario);
+	}
+
+	public List<Usuario> findAllAtivos() {
+		return getDelegate().findAllAtivo();
 	}
 
 

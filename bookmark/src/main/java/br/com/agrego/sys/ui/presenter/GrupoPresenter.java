@@ -1,23 +1,31 @@
 package br.com.agrego.sys.ui.presenter;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.enterprise.context.SessionScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 
 import org.vaadin.data.collectioncontainer.CollectionContainer;
 
+import br.com.agrego.sys.acesscontrol.Credenciais;
 import br.com.agrego.sys.business.GrupoBC;
 import br.com.agrego.sys.business.UsuarioBC;
 import br.com.agrego.sys.domain.Grupo;
+import br.com.agrego.sys.domain.Usuario;
 import br.com.agrego.sys.exeption.MyException;
+import br.com.agrego.sys.ui.annotation.ProcessAdd;
+import br.com.agrego.sys.ui.annotation.ProcessLoad;
 import br.com.agrego.sys.ui.view.GrupoView;
 import br.com.agrego.sys.ui.view.UsuarioView;
 import br.com.agrego.sys.util.components.BotoesBasicos.EnumEstado;
 import br.gov.frameworkdemoiselle.stereotype.ViewController;
 import br.gov.frameworkdemoiselle.vaadin.event.BeforeNavigateToView;
 import br.gov.frameworkdemoiselle.vaadin.event.ProcessClear;
+import br.gov.frameworkdemoiselle.vaadin.event.ProcessDelete;
 import br.gov.frameworkdemoiselle.vaadin.event.ProcessItemSelection;
 import br.gov.frameworkdemoiselle.vaadin.event.ProcessSave;
 import br.gov.frameworkdemoiselle.vaadin.template.AbstractPresenter;
@@ -30,18 +38,66 @@ public class GrupoPresenter extends AbstractPresenter<GrupoView> {
 
 	@Inject	private UsuarioBC usuarioBC;
 	@Inject	private GrupoBC grupoBC;
+	@Inject private Credenciais credenciais;
+	@Inject private BeanManager beanManager;
 	
-	public void processSave(@Observes @ProcessSave UsuarioView view) {
-		getView().usuarios.setContainerDataSource(CollectionContainer.fromBeans(usuarioBC.findAll()));
-		System.out.println("teste: ");
+	public void processLoad(@Observes @ProcessLoad Usuario usuario) {
+		getView().usuarios.setContainerDataSource(CollectionContainer.fromBeans(usuarioBC.findAllAtivos()));
 	}
 	
-	public void processSave(@Observes @ProcessSave Grupo grupo) {
+	@SuppressWarnings({ "serial", "unchecked" })
+	public void processSave(@Observes @ProcessSave GrupoView view) {
+		Grupo grupo = null;
 		try {
+			credenciais.autorizacao(view, Credenciais.ACAO_ALTERAR);
+			grupo = (Grupo) view.tabela.getValue();
+			if (grupo==null) grupo = new Grupo();
+			grupo.setDescricao((String)view.descricao.getValue());
+			grupo.setUsuarios((Set<Usuario>)view.usuarios.getValue());
 			grupoBC.save(grupo);
 		} catch (MyException e) {
 			e.showMessage(getView());
 			setList(grupoBC.findAll());
+			beanManager.fireEvent(grupo, new AnnotationLiteral<ProcessLoad>() {});
+			clear();
+		} catch (Exception e) {
+			getView().getWindow().showNotification("ERRO AO EXECUTAR AÇÃO", 3);
+			e.printStackTrace();
+		}
+	}
+	
+	@SuppressWarnings({ "serial", "unchecked" })
+	public void processAdd(@Observes @ProcessAdd GrupoView view) {
+		Grupo grupo = new Grupo();
+		try {
+			credenciais.autorizacao(view, Credenciais.ACAO_CRIAR);
+			grupo.setDescricao((String)view.descricao.getValue());
+			grupo.setUsuarios((Set<Usuario>)view.usuarios.getValue());
+			grupoBC.save(grupo);
+		} catch (MyException e) {
+			e.showMessage(getView());
+			setList(grupoBC.findAll());
+			beanManager.fireEvent(grupo, new AnnotationLiteral<ProcessLoad>() {});
+			clear();
+		} catch (Exception e) {
+			getView().getWindow().showNotification("ERRO AO EXECUTAR AÇÃO", 3);
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("serial")
+	public void processDelete(@Observes @ProcessDelete UsuarioView view) {
+		Grupo grupo = null;
+		try {
+			credenciais.autorizacao(view, Credenciais.ACAO_EXCLUIR);
+			grupo = (Grupo) view.tabela.getValue();
+			if (grupo==null) new MyException(2, "SELECIONE UM REGISTRO PARA EXCLUIR.");
+			grupo.setAtivo(false);
+			grupoBC.save(grupo);
+		} catch (MyException e) {
+			e.showMessage(getView());
+			setList(grupoBC.findAll());
+			beanManager.fireEvent(grupo, new AnnotationLiteral<ProcessLoad>() {});
 			clear();
 		} catch (Exception e) {
 			e.printStackTrace();
